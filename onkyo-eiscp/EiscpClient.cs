@@ -5,6 +5,8 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
+using Eiscp.Core.Interfaces;
+
 namespace Eiscp.Core
 {
     /// <summary>
@@ -17,7 +19,8 @@ namespace Eiscp.Core
     /// 
     /// You may want to look at the <see cref="Receiver"/> class instead, which
     /// uses a background thread.
-    public class EiscpClient : IReceiver {
+    public class EiscpClient : IReceiver 
+    {
         private Socket commandSocket;
 
         public int Port

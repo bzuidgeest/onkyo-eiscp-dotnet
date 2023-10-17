@@ -6,8 +6,9 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Collections.Specialized;
 using System.Security.Cryptography.X509Certificates;
-using Eiscp.Core;
 using System.Reflection.Emit;
+using Eiscp.Core.Interfaces;
+
 namespace Eiscp.Core
 {
 

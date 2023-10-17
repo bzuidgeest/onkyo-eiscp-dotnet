@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Net;
-namespace Eiscp.Core
+
+namespace Eiscp.Core.Interfaces
 {
-    public interface IReceiver: IDisposable
+    public interface IReceiver : IDisposable
     {
         void Send(string iscpMessage);
         byte[] Get(double timeout);
