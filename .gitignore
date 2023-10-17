@@ -58,3 +58,6 @@ packages/
 
 # Test files
 *.testsettings
+/.vs/onkyo-eiscp/FileContentIndex/a229655e-5642-41e3-a510-80d845e8d386.vsidx
+/.vs/onkyo-eiscp/FileContentIndex
+/.vs/onkyo-eiscp/config/applicationhost.config
