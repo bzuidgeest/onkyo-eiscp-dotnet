@@ -81,7 +81,7 @@ namespace Eiscp.Core
                         
                         string response = Encoding.ASCII.GetString(EiscpPacket.Parse(data));
 
-                        receivers.Add(ReceiverInfo.ParseDiscoveryResponse(response));
+                        receivers.Add(ReceiverInfo.ParseDiscoveryResponse((addr as IPEndPoint), response));
                         
                     }
                 }
