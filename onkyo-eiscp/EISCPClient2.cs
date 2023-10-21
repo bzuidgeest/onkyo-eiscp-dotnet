@@ -20,6 +20,8 @@ namespace Eiscp.Core
 
         
         private Socket socket;
+        private SocketAsyncEventArgs socketAsyncEventArgs = new SocketAsyncEventArgs();
+        private SocketAsyncEventArgs socketAsyncEventArgsSend = new SocketAsyncEventArgs();
 
         public EISCPClient2(ReceiverInfo receiverInfo) 
         { 
@@ -29,10 +31,13 @@ namespace Eiscp.Core
         public void Connect()
         {
             socket = new Socket(ReceiverInfo.IPEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            SocketAsyncEventArgs socketAsyncEventArgs = new SocketAsyncEventArgs();
             socketAsyncEventArgs.Completed += SocketAsyncEventArgs_Completed;
             socketAsyncEventArgs.RemoteEndPoint = ReceiverInfo.IPEndPoint;
             socketAsyncEventArgs.UserToken = socket;
+
+            socketAsyncEventArgsSend.Completed += SocketAsyncEventArgs_Completed;
+            socketAsyncEventArgsSend.RemoteEndPoint = ReceiverInfo.IPEndPoint;
+            socketAsyncEventArgsSend.UserToken = socket;
 
             byte[] buffer = new byte[1024];
             socketAsyncEventArgs.SetBuffer(buffer, 0, buffer.Length);
@@ -111,23 +116,23 @@ namespace Eiscp.Core
 
         private void ProcessSend(SocketAsyncEventArgs eventArgs)
         {
-            //if (eventArgs.SocketError == SocketError.Success)
-            //{
-            //    Console.WriteLine("Sent 'Hello World' to the server");
+            if (eventArgs.SocketError == SocketError.Success)
+            {
+                //Console.WriteLine("Sent 'Hello World' to the server");
 
-            //    //Read data sent from the server
-            //    Socket socket = eventArgs.UserToken as Socket;
-            //    bool willRaiseEvent = socket.ReceiveAsync(eventArgs);
+                //Read data sent from the server
+                //Socket socket = eventArgs.UserToken as Socket;
+                bool willRaiseEvent = socket.ReceiveAsync(eventArgs);
 
-            //    if (!willRaiseEvent)
-            //    {
-            //        ProcessReceive(eventArgs);
-            //    }
-            //}
-            //else
-            //{
-            //    throw new SocketException((int)eventArgs.SocketError);
-            //}
+                if (!willRaiseEvent)
+                {
+                    ProcessReceive(eventArgs);
+                }
+            }
+            else
+            {
+                throw new SocketException((int)eventArgs.SocketError);
+            }
         }
 
         public void SendCommand(string command)
@@ -136,7 +141,15 @@ namespace Eiscp.Core
 
             EiscpPacket packet = new EiscpPacket(message);
 
-            socket.Send(packet.Bytes);
+            socketAsyncEventArgsSend.SetBuffer(packet.Bytes, 0, packet.Bytes.Length);
+            bool willRaiseEvent = socket.SendAsync(socketAsyncEventArgsSend);
+
+            if (!willRaiseEvent)
+            {
+                ProcessSend(socketAsyncEventArgsSend);
+            }
+
+            //socket.Send(packet.Bytes);
         }
 
         public void Disconnect()
