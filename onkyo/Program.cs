@@ -8,6 +8,7 @@ using System.Net;
 using Eiscp.Core;
 using Mono.Options;
 using System.Net.Sockets;
+using Eiscp.Core.Interfaces;
 
 namespace Eiscp
 {

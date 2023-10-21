@@ -37,13 +37,17 @@ namespace Eiscp.Core.Models
                 @"(?<model_name>[^/]*)/" +
                 @"(?<iscp_port>\d{5})/" +
                 @"(?<area_code>\w{2})/" +
-                @"(?<identifier>.*)"
+                @"(?<identifier>[0-9A-Fa-f]{12})"
             ) == false)
             {
                 throw new Exception("Invalid discovery response");
             }
+
+
+            // !(?<device_category>\d)ECN(?<model_name>[^/]*)/(?<iscp_port>\d{5})/(?<area_code>\w{2})/(?<identifier>[0-9A-Fa-f]{12})
+            // My guess is that identifier is basically the mac address of the receiver. Adjusted expression accordingly
             // Return string looks something like this:
-            // !1ECNTX-NR609/60128/DX
+            // !1ECNTX-NR609/60128/DX/000000000000
             GroupCollection info = Regex.Match(response.Trim(),
                 @"!" +
                 @"(?<device_category>\d)" +
@@ -51,8 +55,10 @@ namespace Eiscp.Core.Models
                 @"(?<model_name>[^/]*)/" +
                 @"(?<iscp_port>\d{5})/" +
                 @"(?<area_code>\w{2})/" +
-                @"(?<identifier>.*)"
+                @"(?<identifier>[0-9A-Fa-f]{12})"
             ).Groups;
+
+
 
             return new ReceiverInfo(
                 iPEndPoint,

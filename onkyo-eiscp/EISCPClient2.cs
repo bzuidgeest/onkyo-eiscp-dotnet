@@ -94,7 +94,7 @@ namespace Eiscp.Core
                 //{
                 //    Array.Reverse(foo);
                 //}
-                ////Console.WriteLine("Received from server: {0}", Encoding.UTF8.GetString(eventArgs.Buffer, 0, eventArgs.BytesTransferred));
+                Console.WriteLine("Received from server: {0}", Encoding.UTF8.GetString(eventArgs.Buffer, 0, eventArgs.BytesTransferred));
                 //Console.WriteLine("{0}", BitConverter.ToInt16(foo, 0));
 
                 //// Data has now been sent and received from the server. Disconnect from the server
@@ -132,7 +132,11 @@ namespace Eiscp.Core
 
         public void SendCommand(string command)
         {
-            throw new NotImplementedException();
+            IscpMessage message = new IscpMessage(command);
+
+            EiscpPacket packet = new EiscpPacket(message);
+
+            socket.Send(packet.Bytes);
         }
 
         public void Disconnect()
