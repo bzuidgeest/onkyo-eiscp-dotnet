@@ -352,13 +352,13 @@ class Program
             "using System.Collections.Specialized;\n\n" +
             "namespace Eiscp.Core\n" +
             "{\n" +
-            "\tpublic static class EiscpCommands\n" +
+            "\tpublic static partial class EiscpCommands\n" +
             "\t{\n" +
-            $"\t\tpublic static readonly OrderedDictionary Commands = {PrintData(false, 2, commands)};\n" +
+            $"\t\tpublic static readonly Dictionary<string, OrderedDictionary>  Commands = {PrintData(false, 2, commands)};\n" +
             "\n" +
-            $"\t\tpublic static readonly OrderedDictionary CommandMappings = {PrintData(false, 2, commandMappings)};\n" +
+            $"\t\tpublic static readonly Dictionary<string, OrderedDictionary>  CommandMappings = {PrintData(false, 2, commandMappings)};\n" +
             "\n" +
-            $"\t\tpublic static readonly OrderedDictionary ValueMappings = {PrintData(false, 2, valueMappings)};\n" +
+            $"\t\tpublic static readonly Dictionary<string, OrderedDictionary>  ValueMappings = {PrintData(false, 2, valueMappings)};\n" +
             "\t}\n" +
             "}\n"
         );

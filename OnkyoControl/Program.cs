@@ -29,12 +29,22 @@ while(client.Connected == false)
 {
     Console.Write(".");
 }
+Console.WriteLine("Connected");
+
 
 //client.SendCommand("main.power:on");
-while (true)
+//while (true)
+//{
+//    client.SendCommand("PWRQSTN");
+//    Thread.Sleep(1000);
+//}
+
+for (int i = 0; i < 10; i++)
 {
     client.SendCommand("PWRQSTN");
     Thread.Sleep(1000);
 }
+Console.WriteLine("Shutting down.");
+client.Disconnect();
 
 Console.ReadLine(); 

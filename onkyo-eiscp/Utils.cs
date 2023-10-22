@@ -179,7 +179,7 @@ namespace Eiscp.Core
 			if (command.Length == 3)//if they gave a direct cmd we tolowered it already
 				command = command.ToUpper();
             // Find the command in our database, resolve to internal eISCP command
-			if (!EiscpCommands.Commands.Contains(zone)) {
+			if (!EiscpCommands.Commands.ContainsKey(zone)) {
 				throw new ArgumentException(String.Format("\"{0}\" is not a valid zone", zone));
             }
 

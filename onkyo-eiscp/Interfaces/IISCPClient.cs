@@ -4,13 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eiscp.Core
+namespace Eiscp.Core.Interfaces
 {
     public interface IISCPClient
     {
         public void SendCommand(string command);
 
-        public void Connect();
+        public Task Connect();
         public void Disconnect();
     }
 }
