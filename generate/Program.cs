@@ -120,6 +120,17 @@ class Program
             }
         }
     }
+    private static OrderedDictionary Odict(IEnumerable e)
+    {
+        OrderedDictionary odict = new OrderedDictionary(StructuralComparisons.StructuralEqualityComparer);
+
+        foreach (DictionaryEntry entry in e)
+        {
+            odict[entry.Key] = entry.Value;
+        }
+
+        return odict;
+    }
 
     private static string PrintData(bool indent, int nesting, object data)
     {
@@ -318,23 +329,171 @@ class Program
         return stringOutput.ToString();
     }
 
-    private static OrderedDictionary Odict(IEnumerable e)
+    private static string PrintValueMappings(bool indent, int nesting, object data)
     {
-        OrderedDictionary odict = new OrderedDictionary(StructuralComparisons.StructuralEqualityComparer);
+        var stringOutput = new StringBuilder();
 
-        foreach (DictionaryEntry entry in e)
+        if (indent)
         {
-            odict[entry.Key] = entry.Value;
+            stringOutput.Append('\t', repeatCount: nesting);
         }
 
-        return odict;
+        if (data == null)
+        {
+            stringOutput.Append("null");
+        }
+
+        else if (data is string)
+        {
+            stringOutput.Append(ToLiteral((string)data));
+        }
+        else if (data is Array)
+        {
+            //stringOutput.Append("new MultiValue<string>\r\n");
+            //stringOutput.Append('\t', repeatCount: nesting);
+            //stringOutput.Append("{\r\n");
+
+            //bool comma = false;
+            //foreach (object o in (object[])data)
+            //{
+            //    if (comma)
+            //    {
+            //        stringOutput.Append(",\r\n");
+            //    }
+            //    stringOutput.Append(PrintValueMappings(true, nesting + 1, o));
+            //    comma = true;
+            //}
+
+            //stringOutput.Append("\r\n");
+            //stringOutput.Append('\t', repeatCount: nesting);
+            //stringOutput.Append("}");
+
+            stringOutput.Append("new MultiValue<string>(new string[] {");
+
+            bool comma = false;
+            foreach (object o in (object[])data)
+            {
+                if (comma)
+                {
+                    stringOutput.Append(",");
+                }
+                stringOutput.Append($"\"{o}\"");
+                comma = true;
+            }
+            stringOutput.Append("})");
+        }
+        else if (data is OrderedDictionary)
+        {
+            if (((OrderedDictionary)data)[0] is OrderedDictionary)
+            {
+                switch (nesting)
+                {
+                    case 2:
+                        stringOutput.AppendLine("new Dictionary<string, Dictionary<string, Dictionary<string, IValue>>>() {");
+                        break;
+                    case 3:
+                        stringOutput.AppendLine("new Dictionary<string, Dictionary<string, IValue>>() {");
+                        break;
+                    default:
+                        stringOutput.AppendLine("new Dictionary<string, Dictionary<string, Dictionary<string, IValue>>>() {");
+                        break;
+                }
+            }
+            else if (((OrderedDictionary)data)[0] is string)
+            {
+                stringOutput.AppendLine("new Dictionary<string, IValue>() {");
+            }
+            else
+            {
+                stringOutput.Append("new Dictionary<string, IValue>()\r\n");
+                stringOutput.Append('\t', repeatCount: nesting);
+                stringOutput.Append("{\r\n");
+            }
+
+
+
+            bool comma = false;
+            foreach (DictionaryEntry entry in (OrderedDictionary)data)
+            {
+                if (comma)
+                {
+                    stringOutput.Append(",\r\n");
+                }
+
+
+
+                if (entry.Value is OrderedDictionary)
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("{ ");
+
+                    stringOutput.Append($"{ToLiteral((string)entry.Key)}, {PrintValueMappings(false, nesting + 1, entry.Value)}");
+
+                    stringOutput.Append("\r\n");
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("}");
+                }
+                else if (entry.Value is string)
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append($"{{ \"{(string)entry.Key}\", new SingleValue<string>(\"{(string)entry.Value}\") }}");
+                }
+                else if (entry.Value is Array)
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("{ ");
+
+                    stringOutput.Append(PrintValueMappings(false, nesting + 2, entry.Key));
+
+                    stringOutput.Append(", ");
+
+                    stringOutput.Append(PrintValueMappings(false, nesting + 2, entry.Value));
+
+                    stringOutput.Append(" }");
+                }
+                else
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("{\r\n ");
+
+                    stringOutput.Append(PrintValueMappings(true, nesting + 2, entry.Key));
+
+                    stringOutput.Append(",\r\n");
+
+                    stringOutput.Append(PrintValueMappings(true, nesting + 2, entry.Value));
+
+                    stringOutput.Append("\r\n");
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("}");
+
+                }
+
+
+                comma = true;
+            }
+
+            stringOutput.Append("\r\n");
+            stringOutput.Append('\t', repeatCount: nesting);
+            stringOutput.Append("}");
+        }
+        else
+        {
+            throw new ArgumentException();
+        }
+
+        return stringOutput.ToString();
     }
 
-    static void Process(StreamReader input, TextWriter output)
+
+    static void Process(string inputFile, string outputClassName)
     {
         OrderedDictionary zones;
 
-        var parser = new Parser(input);
+        StreamReader inputStream = new StreamReader(inputFile);
+       
+
+
+        var parser = new Parser(inputStream);
 
 
         parser.Consume<StreamStart>();
@@ -422,39 +581,89 @@ class Program
             }
         );
 
+        StreamWriter outputStream = new StreamWriter($"../../../{outputClassName}.C.generated.cs", append: false);
 
-        output.Write(
+        outputStream.Write(
             "// Generated\r\n" +
             "// by {0}\r\n" +
             "// from {1}\r\n" +
-            "// at {2}\r\n\r\n",
+            "// at {2}\r\n\r\n".ReplaceLineEndings(),
             "", //Path.GetFileName(Environment.GetCommandLineArgs()[0]),
             "", //Path.GetFileName(Environment.GetCommandLineArgs()[1]),
             DateTime.Now
         );
 
-        output.Write(
+        outputStream.Write(
             "using System.Collections;\r\n" +
             "using System.Collections.Specialized;\r\n\r\n" +
             "namespace Eiscp.Core\r\n" +
             "{\r\n" +
             "\tpublic static partial class EiscpCommands\r\n" +
             "\t{\r\n" +
-            $"\t\tpublic static readonly Dictionary<string, OrderedDictionary>  Commands = {PrintData(false, 2, commands)};\r\n" +
-            "\r\n" +
-            $"\t\tpublic static readonly Dictionary<string, Dictionary<string, string>> CommandMappings = {PrintCommandMappings(false, 2, commandMappings)};\r\n" +
-            "\r\n" +
-            $"\t\tpublic static readonly Dictionary<string, OrderedDictionary>  ValueMappings = {PrintData(false, 2, valueMappings)};\r\n" +
+            $"\t\tpublic static readonly Dictionary<string, object>  Commands = {PrintData(false, 2, commands)};\r\n" +
             "\t}\r\n" +
-            "}\r\n"
+            "}\r\n".ReplaceLineEndings()
         );
-        output.Flush();
+        outputStream.Flush();
+        outputStream.Close();
+
+        outputStream = new StreamWriter($"../../../{outputClassName}.CM.generated.cs", append: false);
+
+        outputStream.Write(
+            "// Generated\r\n" +
+            "// by {0}\r\n" +
+            "// from {1}\r\n" +
+            "// at {2}\r\n\r\n".ReplaceLineEndings(),
+            "", //Path.GetFileName(Environment.GetCommandLineArgs()[0]),
+            "", //Path.GetFileName(Environment.GetCommandLineArgs()[1]),
+            DateTime.Now
+        );
+
+        outputStream.Write(
+            "using System.Collections;\r\n" +
+            "using System.Collections.Specialized;\r\n\r\n" +
+            "namespace Eiscp.Core\r\n" +
+            "{\r\n" +
+            "\tpublic static partial class EiscpCommands\r\n" +
+            "\t{\r\n" +
+            $"\t\tpublic static readonly Dictionary<string, Dictionary<string, string>> CommandMappings = {PrintCommandMappings(false, 2, commandMappings)};\r\n" +
+            "\t}\r\n" +
+            "}\r\n".ReplaceLineEndings()
+        );
+        outputStream.Flush();
+        outputStream.Close();
+
+        outputStream = new StreamWriter($"../../../{outputClassName}.CV.generated.cs", append: false);
+
+        outputStream.Write(
+            "// Generated\r\n" +
+            "// by {0}\r\n" +
+            "// from {1}\r\n" +
+            "// at {2}\r\n\r\n".ReplaceLineEndings(),
+            "", //Path.GetFileName(Environment.GetCommandLineArgs()[0]),
+            "", //Path.GetFileName(Environment.GetCommandLineArgs()[1]),
+            DateTime.Now
+        );
+
+        outputStream.Write(
+            "using System.Collections;\r\n" +
+            "using System.Collections.Specialized;\r\n\r\n" +
+            "namespace Eiscp.Core\r\n" +
+            "{\r\n" +
+            "\tpublic static partial class EiscpCommands\r\n" +
+            "\t{\r\n" +
+            $"\t\tpublic static readonly Dictionary<string, Dictionary<string, Dictionary<string, IValue>>> ValueMappings = {PrintValueMappings(false, 2, valueMappings)};\r\n" +
+            "\t}\r\n" +
+            "}\r\n".ReplaceLineEndings()
+        );
+        outputStream.Flush();
+        outputStream.Close();
     }
 
     public static void Main(string[] args)
     {
         string inputFile = "./eiscp-commands.yaml";
-        string outputFile = "./ISCPCommands.generated.cs";
+        string outputClassName = "ISCPCommands";
 
         if (args.Length < 2)
         {
@@ -463,7 +672,7 @@ class Program
         else
         {
             inputFile = args[0];
-            outputFile = args[1];
+            outputClassName = args[1];
         }
 
         if (File.Exists(inputFile) == false)
@@ -471,11 +680,9 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
-        StreamReader inputStream = new StreamReader(inputFile);
-        StreamWriter outputStream = new StreamWriter(outputFile, append: false);
+       
 
-
-        Process(inputStream, outputStream);
+        Process(inputFile, outputClassName);
     }
 }
 
