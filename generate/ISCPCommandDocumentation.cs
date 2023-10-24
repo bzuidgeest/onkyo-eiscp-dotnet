@@ -12,7 +12,7 @@ namespace Eiscp.Core
         public string Description { get; set; }
         public string[] Aliasses { get; set; }
 
-        public object[] Values { get; set; }
+        public Dictionary<string, ISCPCommandValueDocumentation> Values { get; set; }
 
         public ISCPCommandDocumentation() { }
     }
