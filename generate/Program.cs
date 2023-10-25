@@ -173,31 +173,76 @@ class Program
         }
         else if (data is OrderedDictionary)
         {
-            stringOutput.Append("new Dictionary<string, object>()\r\n");
-            stringOutput.Append('\t', repeatCount: nesting);
-            stringOutput.Append("{\r\n");
+            switch (nesting)
+            {
+                case 2:
+                    stringOutput.AppendLine("new Dictionary<string, Dictionary<string, Dictionary<string, ISCPCommandDocumentation>>>() {");
+                    break;
+                case 4:
+                    stringOutput.Append("new Dictionary<string, Dictionary<string, ISCPCommandDocumentation>>() {");
+                    break;
+                case 6:
+                    stringOutput.AppendLine("new ISCPCommandDocumentation() {");
+                    break;
+                default:
+                    stringOutput.AppendLine("new Dictionary<string, Dictionary<string, Dictionary<string, IValue>>>() {");
+                    break;
+            }
 
             bool comma = false;
             foreach (DictionaryEntry entry in (OrderedDictionary)data)
             {
                 if (comma)
                 {
-                    stringOutput.Append(",\r\n");
+                    stringOutput.Append(",");
                 }
 
-                stringOutput.Append('\t', repeatCount: nesting + 1);
-                stringOutput.Append("{\r\n ");
+                if (entry.Key is string && (entry.Value is string || entry.Value is object[] || entry.Value is null))
+                {
+                    //stringOutput.Append('\t', repeatCount: nesting + 1);
+                    //stringOutput.AppendLine($"{char.ToUpper(((string)entry.Key)[0])}{((string)entry.Key).Substring(1)} = \"{((string)entry.Value)}\",");
+                    stringOutput.AppendLine(PrintClassProperty(entry.Key as string, entry.Value, nesting + 1));
+                }
+                else if (entry.Key is string && entry.Key as string == "values" && entry.Value is OrderedDictionary)
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.AppendLine($"{char.ToUpper(((string)entry.Key)[0])}{((string)entry.Key).Substring(1)} = new Dictionary<string, ISCPCommandValueDocumentation>() {{ ");
 
-                stringOutput.Append(PrintData(true, nesting + 2, entry.Key));
+                    foreach (DictionaryEntry value in ((OrderedDictionary)entry.Value))
+                    {
+                        stringOutput.Append('\t', repeatCount: nesting + 2);
+                        stringOutput.AppendLine($"\"{value.Key.ToString()}\", new ISCPCommandValueDocumentation() {{");
 
-                stringOutput.Append(",\r\n");
+                        
+                        foreach (DictionaryEntry p in ((OrderedDictionary)value.Value))
+                        {
+                            stringOutput.AppendLine($"{PrintClassProperty(p.Key as string, p.Value, nesting + 3)}, ");
+                        }
+                        stringOutput.Length--;
+                        stringOutput.Length--;
+                        stringOutput.Length--;
 
-                stringOutput.Append(PrintData(true, nesting + 2, entry.Value));
+                        stringOutput.AppendLine();
+                        stringOutput.Append('\t', repeatCount: nesting + 2);
+                        stringOutput.AppendLine("}");
+                    }
+                }
+                else
+                {
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("{\r\n ");
 
-                stringOutput.Append("\r\n");
-                stringOutput.Append('\t', repeatCount: nesting + 1);
-                stringOutput.Append("}");
+                    stringOutput.Append(PrintData(true, nesting + 2, entry.Key));
 
+                    //stringOutput.Append(",\r\n");
+                    stringOutput.Append(", ");
+
+                    stringOutput.Append(PrintData(false, nesting + 2, entry.Value));
+
+                    stringOutput.Append("\r\n");
+                    stringOutput.Append('\t', repeatCount: nesting + 1);
+                    stringOutput.Append("}");
+                }
                 comma = true;
             }
 
@@ -208,6 +253,32 @@ class Program
         else
         {
             throw new ArgumentException();
+        }
+
+        return stringOutput.ToString();
+    }
+
+    public static string PrintClassProperty(string name, object value, int identCount)
+    {
+        StringBuilder stringOutput = new StringBuilder();
+
+        if (value is string)
+        {
+            stringOutput.Append('\t', repeatCount: identCount);
+            stringOutput.Append($"{char.ToUpper(name[0])}{name.Substring(1)} = @\"{((string)value)}\",");
+        }
+        if (value is null)
+        {
+            stringOutput.Append('\t', repeatCount: identCount);
+            stringOutput.Append($"{char.ToUpper(name[0])}{name.Substring(1)} = null,");
+        }
+        else if (value is object[])
+        {
+            stringOutput.Append('\t', repeatCount: identCount);
+            stringOutput.Append($"{char.ToUpper(name[0])}{name.Substring(1)} =  new string[] {{ ");
+
+            stringOutput.Append(String.Join(",", ((object[])value).Select(x => $"\"{x}\"")));
+            stringOutput.Append(" })");
         }
 
         return stringOutput.ToString();
@@ -279,7 +350,7 @@ class Program
                     stringOutput.Append(",\r\n");
                 }
 
-                
+
 
                 if (entry.Value is OrderedDictionary)
                 {
@@ -287,7 +358,7 @@ class Program
                     stringOutput.Append("{ ");
 
                     stringOutput.Append($"{ToLiteral((string)entry.Key)}, {PrintCommandMappings(false, nesting, entry.Value)}");
-                    
+
                     stringOutput.Append("\r\n");
                     stringOutput.Append('\t', repeatCount: nesting + 1);
                     stringOutput.Append("}");
@@ -312,7 +383,7 @@ class Program
                     stringOutput.Append('\t', repeatCount: nesting + 1);
                     stringOutput.Append("}");
                 }
-                
+
 
                 comma = true;
             }
@@ -349,25 +420,6 @@ class Program
         }
         else if (data is Array)
         {
-            //stringOutput.Append("new MultiValue<string>\r\n");
-            //stringOutput.Append('\t', repeatCount: nesting);
-            //stringOutput.Append("{\r\n");
-
-            //bool comma = false;
-            //foreach (object o in (object[])data)
-            //{
-            //    if (comma)
-            //    {
-            //        stringOutput.Append(",\r\n");
-            //    }
-            //    stringOutput.Append(PrintValueMappings(true, nesting + 1, o));
-            //    comma = true;
-            //}
-
-            //stringOutput.Append("\r\n");
-            //stringOutput.Append('\t', repeatCount: nesting);
-            //stringOutput.Append("}");
-
             stringOutput.Append("new MultiValue<string>(new string[] {");
 
             bool comma = false;
@@ -490,7 +542,7 @@ class Program
         OrderedDictionary zones;
 
         StreamReader inputStream = new StreamReader(inputFile);
-       
+
 
 
         var parser = new Parser(inputStream);
@@ -680,7 +732,7 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
-       
+
 
         Process(inputFile, outputClassName);
     }
