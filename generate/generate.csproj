@@ -8,14 +8,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Remove="ISCPCommands.C.generated.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <None Include="ISCPCommands.C.generated.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
+	  <PackageReference Include="EPPlus" Version="7.0.0" />
 	  <PackageReference Include="System.CodeDom" Version="7.0.0" />
 	  <PackageReference Include="YamlDotNet" Version="13.7.1" />
 	</ItemGroup>

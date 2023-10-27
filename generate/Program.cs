@@ -10,6 +10,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using System.CodeDom.Compiler;
 using System.Net.Http.Headers;
+using onkyo;
 
 class Program
 {
@@ -732,9 +733,9 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
+        OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
 
-
-        Process(inputFile, outputClassName);
+        //Process(inputFile, outputClassName);
     }
 }
 

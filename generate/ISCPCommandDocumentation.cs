@@ -8,6 +8,7 @@ namespace Eiscp.Core
 {
     public class ISCPCommandDocumentation
     {
+        public string Zone { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string[] Aliasses { get; set; }
