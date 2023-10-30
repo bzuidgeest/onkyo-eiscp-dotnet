@@ -137,6 +137,9 @@ namespace onkyo
 
             // fixes
             // split commands like SPA/SPB
+            var temp = commands.Where(x => x.Name.Contains('/'));
+
+
             Console.WriteLine("Done!");
             Console.ReadLine();
             return "";
