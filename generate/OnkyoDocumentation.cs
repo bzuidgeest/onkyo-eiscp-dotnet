@@ -1,4 +1,5 @@
-﻿using OfficeOpenXml;
+﻿using Eiscp.Core;
+using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,6 +28,8 @@ namespace onkyo
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
+            List<ISCPCommandDocumentation> commands = new List<ISCPCommandDocumentation>();
+
             using (var package = new ExcelPackage(new FileInfo(file)))
             {
                 // Loop through alls sheets with commands.
@@ -42,26 +45,94 @@ namespace onkyo
                         int column = worksheet.Dimension.Start.Column;
 
                         // Loop through all rows documentign the commands listed by the current worksheet.
-                        for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row; row++)
+                        for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row;)
                         {
-                            // very nasty but mostly all commands seem to use background color index 41 first deviation is SPA/SPB
-                            //if (worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed == 41)
+
+                            // Find commands based on regex
                             if (worksheet.Cells[row, column].Value != null
                                 && worksheet.Cells[row, column].Value.GetType() == typeof(String)
                                 && Regex.IsMatch(worksheet.Cells[row, column].Value.ToString(), "\"(?<command>.*)\" - (?<description>.*)") == true)
                             {
                                 GroupCollection commandGroup = Regex.Match(worksheet.Cells[row, column].Value.ToString(), "\"(?<command>.*)\" - (?<description>.*)").Groups;
+
+
+                                ISCPCommandDocumentation commandDocumentation = new ISCPCommandDocumentation();
+                                commandDocumentation.Zone = zoneName;
+                                commandDocumentation.Name = commandGroup["command"].ToString();
+                                commandDocumentation.Description = commandGroup["command"].ToString();
+
                                 Console.WriteLine($"{commandGroup["command"]}");
-
-
                                 //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
+
+                                // Add values to a command
+                                // Go to next row to find first value line
+                                row++;
+                                while (worksheet.Cells[row, column].Value != null
+                                    && worksheet.Cells[row, column].Value.GetType() == typeof(String)
+                                    && worksheet.Cells[row, column + 1].Value != null
+                                    && worksheet.Cells[row, column + 1].Value.GetType() == typeof(String)
+                                    && Regex.IsMatch(worksheet.Cells[row, column].Value.ToString(), "\"(?<command>.*)\" - (?<description>.*)") == false)
+                                {
+                                    //GroupCollection valueGroup = Regex.Match(worksheet.Cells[row, column].Value.ToString(), "\"(?<command>.*)\" - (?<description>.*)").Groups;
+
+                                    // filter * rows.
+                                    if (worksheet.Cells[row, column].Value.ToString().StartsWith("*") == false)
+                                    {
+                                        List<string> supportedModels = new List<string>();
+                                        for (int s = 0; worksheet.Cells[2, column + 3 + s].Value != null; s++)
+                                        {
+                                            if (worksheet.Cells[row, column + 2 + s].Value != null 
+                                                && worksheet.Cells[row, column + 2 + s].Value.ToString().StartsWith("Yes"))
+                                            {
+                                                supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                                            }
+                                            //if (worksheet.Cells[2, column + 3 + s].Value == null)
+                                            //{
+                                            //    break;
+                                            //}
+                                        }
+
+                                        string temp = string.Join(", ", supportedModels);
+                                        if (temp.Length > 10)
+                                        {
+                                            Console.WriteLine(temp.Substring(10));
+                                        }
+                                        else
+                                        {
+                                            Console.WriteLine(temp);
+                                        }
+
+                                        Console.WriteLine($"{worksheet.Cells[row, column].Value.ToString()} {worksheet.Cells[row, column + 1].Value.ToString()}");
+
+                                    }
+
+                                    //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
+                                    row++;
+                                }
+
+
+                                if (string.IsNullOrEmpty(commandDocumentation.Name) == false)
+                                {
+                                    commands.Add(commandDocumentation);
+                                }
                             }
+                            else
+                            {
+                                // Check next row for a command
+                                row++;
+                            }
+
+
+
                         }
 
 
                     }
                 }
             }
+
+            // fixes
+            // split commands like SPA/SPB
 
             Console.ReadLine();
             return "";
