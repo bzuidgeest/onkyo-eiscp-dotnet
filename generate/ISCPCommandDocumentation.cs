@@ -13,7 +13,9 @@ namespace Eiscp.Core
         public string Description { get; set; }
         public string[] Aliasses { get; set; }
 
-        public Dictionary<string, ISCPCommandValueDocumentation> Values { get; set; }
+        public Dictionary<string, ISCPCommandValueDocumentation> Values { get; set; } = new Dictionary<string, ISCPCommandValueDocumentation>();
+
+        public List<ISCPCommandValueDocumentation> Values2 { get; set; } = new List<ISCPCommandValueDocumentation>();
 
         public ISCPCommandDocumentation() { }
     }

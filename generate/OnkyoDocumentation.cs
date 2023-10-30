@@ -3,6 +3,7 @@ using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -40,7 +41,7 @@ namespace onkyo
                         // Extract the "zonename" from the worksheet name
                         string zoneName = Regex.Match(worksheet.Name, "^CMND\\((?<zoneName>.*)\\)$").Groups["zoneName"].ToString();
 
-                        Console.WriteLine(zoneName);
+                        Debug.WriteLine($"Zone: {zoneName}");
 
                         int column = worksheet.Dimension.Start.Column;
 
@@ -55,13 +56,12 @@ namespace onkyo
                             {
                                 GroupCollection commandGroup = Regex.Match(worksheet.Cells[row, column].Value.ToString(), "\"(?<command>.*)\" - (?<description>.*)").Groups;
 
-
                                 ISCPCommandDocumentation commandDocumentation = new ISCPCommandDocumentation();
                                 commandDocumentation.Zone = zoneName;
                                 commandDocumentation.Name = commandGroup["command"].ToString();
                                 commandDocumentation.Description = commandGroup["command"].ToString();
 
-                                Console.WriteLine($"{commandGroup["command"]}");
+                                Debug.WriteLine($"Command: {commandGroup["command"]}");
                                 //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
 
                                 // Add values to a command
@@ -81,7 +81,7 @@ namespace onkyo
                                         List<string> supportedModels = new List<string>();
                                         for (int s = 0; worksheet.Cells[2, column + 3 + s].Value != null; s++)
                                         {
-                                            if (worksheet.Cells[row, column + 2 + s].Value != null 
+                                            if (worksheet.Cells[row, column + 2 + s].Value != null
                                                 && worksheet.Cells[row, column + 2 + s].Value.ToString().StartsWith("Yes"))
                                             {
                                                 supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
@@ -92,18 +92,22 @@ namespace onkyo
                                             //}
                                         }
 
-                                        string temp = string.Join(", ", supportedModels);
-                                        if (temp.Length > 10)
-                                        {
-                                            Console.WriteLine(temp.Substring(10));
-                                        }
-                                        else
-                                        {
-                                            Console.WriteLine(temp);
-                                        }
+                                        //string temp = string.Join(", ", supportedModels);
+                                        //if (temp.Length > 10)
+                                        //{
+                                        //    Console.WriteLine(temp.Substring(10));
+                                        //}
+                                        //else
+                                        //{
+                                        //    Console.WriteLine(temp);
+                                        //}
 
-                                        Console.WriteLine($"{worksheet.Cells[row, column].Value.ToString()} {worksheet.Cells[row, column + 1].Value.ToString()}");
-
+                                        Debug.WriteLine($"Value: {worksheet.Cells[row, column].Value.ToString().Trim('”').Trim('"')}, Value description: {worksheet.Cells[row, column + 1].Value.ToString()}");
+                                        commandDocumentation.Values2.Add(new ISCPCommandValueDocumentation() { 
+                                            Name = new string[] { worksheet.Cells[row, column].Value.ToString().Trim('”').Trim('"') }, 
+                                            Description = worksheet.Cells[row, column + 1].Value.ToString(), 
+                                            SupportedDevices = supportedModels.ToArray()
+                                        });
                                     }
 
                                     //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
@@ -133,7 +137,7 @@ namespace onkyo
 
             // fixes
             // split commands like SPA/SPB
-
+            Console.WriteLine("Done!");
             Console.ReadLine();
             return "";
         }
