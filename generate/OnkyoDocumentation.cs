@@ -21,7 +21,7 @@ namespace onkyo
         //CMND(TV via RIHD)
         private static string[] worksheetsToParse = { "CMND(MAIN)", "CMND(ZONE2)", "CMND(ZONE3)", "CMND(ZONE4)", "CMND(NET USB)" };
 
-        public static string Parse(string file)
+        public static List<ISCPCommandDocumentation> Parse(string file)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
@@ -138,8 +138,8 @@ namespace onkyo
 
 
             Console.WriteLine("Done!");
-            Console.ReadLine();
-            return "";
+            //Console.ReadLine();
+            return commands;
         }
     }
 }

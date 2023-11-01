@@ -11,6 +11,11 @@ using YamlDotNet.Core.Events;
 using System.CodeDom.Compiler;
 using System.Net.Http.Headers;
 using onkyo;
+//using static System.Net.Mime.MediaTypeNames;
+//using System.Reflection.Emit;
+using Terminal.Gui;
+using Eiscp.Core;
+using generate;
 
 class Program
 {
@@ -214,7 +219,7 @@ class Program
                         stringOutput.Append('\t', repeatCount: nesting + 2);
                         stringOutput.AppendLine($"\"{value.Key.ToString()}\", new ISCPCommandValueDocumentation() {{");
 
-                        
+
                         foreach (DictionaryEntry p in ((OrderedDictionary)value.Value))
                         {
                             stringOutput.AppendLine($"{PrintClassProperty(p.Key as string, p.Value, nesting + 3)}, ");
@@ -733,8 +738,17 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
-        OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
+        List<ISCPCommandDocumentation> commands = OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
 
+
+        Application.Init();
+
+        DocumentationWindow documentation = new DocumentationWindow(commands);
+
+        
+        Application.Top.Add(documentation);
+        Application.Run();
+        Application.Shutdown();
         //Process(inputFile, outputClassName);
     }
 }
