@@ -19,7 +19,7 @@ namespace onkyo
         //CMND(PORT)
         //CMND(BD via RIHD)
         //CMND(TV via RIHD)
-        private static string[] worksheetsToParse = { "CMND(MAIN)", "CMND(ZONE2)", "CMND(ZONE3)", "CMND(ZONE4)", "CMND(NET USB)" };
+        private static string[] worksheetsToParse = { "CMND(MAIN)", "CMND(ZONE2)", "CMND(ZONE3)", "CMND(ZONE4)", "CMND(NET USB)", "CMND(PORT)" };
 
         public static List<ISCPCommandDocumentation> Parse(string file)
         {
@@ -41,7 +41,7 @@ namespace onkyo
 
                         int column = worksheet.Dimension.Start.Column;
 
-                        // Loop through all rows documentign the commands listed by the current worksheet.
+                        // Loop through all rows documenting the commands listed by the current worksheet.
                         for (int row = worksheet.Dimension.Start.Row; row <= worksheet.Dimension.End.Row;)
                         {
 
@@ -55,7 +55,7 @@ namespace onkyo
                                 ISCPCommandDocumentation commandDocumentation = new ISCPCommandDocumentation();
                                 commandDocumentation.Zone = zoneName;
                                 commandDocumentation.Name = commandGroup["command"].ToString();
-                                commandDocumentation.Description = commandGroup["command"].ToString();
+                                commandDocumentation.Description = commandGroup["description"].ToString();
 
                                 Debug.WriteLine($"Command: {commandGroup["command"]}");
                                 //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
