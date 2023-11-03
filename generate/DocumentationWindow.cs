@@ -18,9 +18,9 @@ namespace generate
         private string selectedCommand = "";
 
         private List<ISCPCommandDocumentation> commands;
-        public DocumentationWindow(List<ISCPCommandDocumentation> commands)
+        public DocumentationWindow(ISCPDocumentation documentation)
         {
-            this.commands = commands;
+            this.commands = documentation.Commands;
 
             var menu = new MenuBar(new MenuBarItem[] {
                 new MenuBarItem ("_File", new MenuItem [] {

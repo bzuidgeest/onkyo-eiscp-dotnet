@@ -738,12 +738,12 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
-        List<ISCPCommandDocumentation> commands = OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
+        ISCPDocumentation iSCPDocumentation = OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
 
 
         Application.Init();
 
-        DocumentationWindow documentation = new DocumentationWindow(commands);
+        DocumentationWindow documentation = new DocumentationWindow(iSCPDocumentation);
 
         
         Application.Top.Add(documentation);

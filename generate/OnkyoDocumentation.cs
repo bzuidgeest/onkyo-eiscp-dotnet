@@ -1,4 +1,5 @@
 ﻿using Eiscp.Core;
+using generate;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -21,17 +22,43 @@ namespace onkyo
         //CMND(TV via RIHD)
         private static string[] worksheetsToParse = { "CMND(MAIN)", "CMND(ZONE2)", "CMND(ZONE3)", "CMND(ZONE4)", "CMND(NET USB)", "CMND(PORT)" };
 
-        public static List<ISCPCommandDocumentation> Parse(string file)
+        public static ISCPDocumentation Parse(string file)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            List<ISCPCommandDocumentation> commands = new List<ISCPCommandDocumentation>();
+            ISCPDocumentation documentation = new ISCPDocumentation(new Version(1, 46, 0));
+
 
             using (var package = new ExcelPackage(new FileInfo(file)))
             {
                 // Loop through alls sheets with commands.
                 foreach (ExcelWorksheet worksheet in package.Workbook.Worksheets.Where(x => worksheetsToParse.Contains(x.Name)))
                 {
+                    Dictionary<int, string[]> modelsInCurrentSheet = new Dictionary<int, string[]>();
+                    // Discover all possible models in current sheet and add to the model list.
+                    // also used to fix line breaks with "()" attributes
+                    for (int s = 0; worksheet.Cells[2, 3 + s].Value != null; s++)
+                    {
+                        if (worksheet.Cells[2, 3 + s].Value != null)
+                        {
+                            List<string> tempModels = worksheet.Cells[2, 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList<string>();
+
+                            for (int i = 0; i < tempModels.Count; i++)
+                            {
+                                if (tempModels[i][0] == '(')
+                                {
+                                    tempModels[i - 1] += $" {tempModels[i]}";
+                                    tempModels.RemoveAt(i);
+                                }
+                            }
+                            modelsInCurrentSheet.Add(s, tempModels.ToArray());
+                        }
+                    }
+
+                    // Every column can have multiple model names in it.
+                    documentation.AddModels(modelsInCurrentSheet.SelectMany(x => x.Value).ToArray());
+
+                    // parse commands
                     if (Regex.IsMatch(worksheet.Name, "^CMND\\((?<zoneName>.*)\\)$") == true)
                     {
                         // Extract the "zonename" from the worksheet name
@@ -74,13 +101,29 @@ namespace onkyo
                                     // filter * rows.
                                     if (worksheet.Cells[row, column].Value.ToString().StartsWith("*") == false)
                                     {
+                                        //List<string> supportedModels = new List<string>();
+                                        //for (int s = 0; worksheet.Cells[2, column + 3 + s].Value != null; s++)
+                                        //{
+                                        //    if (worksheet.Cells[row, column + 2 + s].Value != null
+                                        //        && worksheet.Cells[row, column + 2 + s].Value.ToString().StartsWith("Yes"))
+                                        //    {
+                                        //        supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                                        //    }
+                                        //    //if (worksheet.Cells[2, column + 3 + s].Value == null)
+                                        //    //{
+                                        //    //    break;
+                                        //    //}
+                                        //}
+
                                         List<string> supportedModels = new List<string>();
                                         for (int s = 0; worksheet.Cells[2, column + 3 + s].Value != null; s++)
                                         {
                                             if (worksheet.Cells[row, column + 2 + s].Value != null
                                                 && worksheet.Cells[row, column + 2 + s].Value.ToString().StartsWith("Yes"))
                                             {
-                                                supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                                                //supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+                                                // Add models from the preparsed and fixed modellist of the current sheet.
+                                                supportedModels.AddRange(modelsInCurrentSheet[column + 2 + s]);
                                             }
                                             //if (worksheet.Cells[2, column + 3 + s].Value == null)
                                             //{
@@ -99,9 +142,10 @@ namespace onkyo
                                         //}
 
                                         Debug.WriteLine($"Value: {worksheet.Cells[row, column].Value.ToString().Trim('”').Trim('"')}, Value description: {worksheet.Cells[row, column + 1].Value.ToString()}");
-                                        commandDocumentation.Values2.Add(new ISCPCommandValueDocumentation() { 
-                                            Name = new string[] { worksheet.Cells[row, column].Value.ToString().Trim('”').Trim('"') }, 
-                                            Description = worksheet.Cells[row, column + 1].Value.ToString(), 
+                                        commandDocumentation.Values2.Add(new ISCPCommandValueDocumentation()
+                                        {
+                                            Name = new string[] { worksheet.Cells[row, column].Value.ToString().Trim('”').Trim('"') },
+                                            Description = worksheet.Cells[row, column + 1].Value.ToString(),
                                             SupportedDevices = supportedModels.ToArray()
                                         });
                                     }
@@ -113,7 +157,7 @@ namespace onkyo
 
                                 if (string.IsNullOrEmpty(commandDocumentation.Name) == false)
                                 {
-                                    commands.Add(commandDocumentation);
+                                    documentation.Commands.Add(commandDocumentation);
                                 }
                             }
                             else
@@ -132,14 +176,14 @@ namespace onkyo
             }
 
             // fixes
-            
+
             // split commands like SPA/SPB
-            var temp = commands.Where(x => x.Name.Contains('/'));
+            var temp = documentation.Commands.Where(x => x.Name.Contains('/'));
 
 
             Console.WriteLine("Done!");
             //Console.ReadLine();
-            return commands;
+            return documentation;
         }
     }
 }
