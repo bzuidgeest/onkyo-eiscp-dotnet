@@ -35,7 +35,7 @@ namespace generate
         public void AddModels(string[] models)
         {
 
-            Models = models.Union(models).ToArray();
+            Models = Models.Union(models).ToArray();
         }
     }
 }

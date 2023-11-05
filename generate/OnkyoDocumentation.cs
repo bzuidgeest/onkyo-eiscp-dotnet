@@ -26,10 +26,25 @@ namespace onkyo
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-            ISCPDocumentation documentation = new ISCPDocumentation(new Version(1, 46, 0));
+            FileInfo documentationFile = new FileInfo(file);
+
+            MatchCollection versionCapture = Regex.Matches(documentationFile.Name, "[0-9]+");
+            int fileVerion = 0;
+            if (versionCapture.Count > 0)
+            {
+                fileVerion = int.Parse(versionCapture[0].Value);
+
+            }
+            else
+            {
+                throw new Exception("Could not determine documetation file version");
+            }
+
+            ISCPDocumentation documentation = new ISCPDocumentation(new Version(fileVerion / 100, fileVerion % 100));
 
 
-            using (var package = new ExcelPackage(new FileInfo(file)))
+
+            using (var package = new ExcelPackage(documentationFile))
             {
                 // Loop through alls sheets with commands.
                 foreach (ExcelWorksheet worksheet in package.Workbook.Worksheets.Where(x => worksheetsToParse.Contains(x.Name)))
@@ -41,17 +56,24 @@ namespace onkyo
                     {
                         if (worksheet.Cells[2, 3 + s].Value != null)
                         {
-                            List<string> tempModels = worksheet.Cells[2, 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList<string>();
+                            List<string> tempModels = worksheet.Cells[2, 3 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList<string>();
 
                             for (int i = 0; i < tempModels.Count; i++)
                             {
+                                // Fix for missing line break...
+                                if (tempModels[i] == "TX-NR5000ETX-NA1000")
+                                {
+                                    tempModels.Insert(i + 1, "TX-NA1000");
+                                    tempModels[i] = "TX-NR5000E";
+                                }
+
                                 if (tempModels[i][0] == '(')
                                 {
                                     tempModels[i - 1] += $" {tempModels[i]}";
                                     tempModels.RemoveAt(i);
                                 }
                             }
-                            modelsInCurrentSheet.Add(s, tempModels.ToArray());
+                            modelsInCurrentSheet.Add(3 + s, tempModels.ToArray());
                         }
                     }
 
@@ -81,8 +103,8 @@ namespace onkyo
 
                                 ISCPCommandDocumentation commandDocumentation = new ISCPCommandDocumentation();
                                 commandDocumentation.Zone = zoneName;
-                                commandDocumentation.Name = commandGroup["command"].ToString();
-                                commandDocumentation.Description = commandGroup["description"].ToString();
+                                commandDocumentation.Name = commandGroup["command"].ToString().Trim();
+                                commandDocumentation.Description = commandGroup["description"].ToString().Trim();
 
                                 Debug.WriteLine($"Command: {commandGroup["command"]}");
                                 //Console.WriteLine($"{worksheet.Cells[row, column].Value} {worksheet.Cells[row, column].Style.Fill.BackgroundColor.Indexed}");
@@ -116,14 +138,14 @@ namespace onkyo
                                         //}
 
                                         List<string> supportedModels = new List<string>();
-                                        for (int s = 0; worksheet.Cells[2, column + 3 + s].Value != null; s++)
+                                        for (int s = 1; worksheet.Cells[2, 2 + s].Value != null; s++)
                                         {
-                                            if (worksheet.Cells[row, column + 2 + s].Value != null
-                                                && worksheet.Cells[row, column + 2 + s].Value.ToString().StartsWith("Yes"))
+                                            if (worksheet.Cells[row, 2 + s].Value != null
+                                                && worksheet.Cells[row, 2 + s].Value.ToString().StartsWith("Yes"))
                                             {
                                                 //supportedModels.AddRange(worksheet.Cells[2, column + 2 + s].Value.ToString().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
                                                 // Add models from the preparsed and fixed modellist of the current sheet.
-                                                supportedModels.AddRange(modelsInCurrentSheet[column + 2 + s]);
+                                                supportedModels.AddRange(modelsInCurrentSheet[2 + s]);
                                             }
                                             //if (worksheet.Cells[2, column + 3 + s].Value == null)
                                             //{
@@ -181,9 +203,29 @@ namespace onkyo
             var temp = documentation.Commands.Where(x => x.Name.Contains('/'));
 
 
+            // Fix conflicting DIF support
+            // Get the supported model list 
+            List<string> models = documentation.Commands.Single(x => x.Name == "DIF"
+                && x.Description == "Display Mode Command")
+                .Values2.Single(x => x.Name[0] == "02").SupportedDevices.ToList();
+            // Remove incorrect models
+            models.Remove("TX-DS989");
+            models.Remove("DTR-9.1");
+            models.Remove("RDC-7");
+            models.Remove("TX-DS989");
+            models.Remove("DTC-9.1");
+            models.Remove("RDC-7 (Ver2.0)");
+            models.Remove("TX-DS787");
+            models.Remove("DTR-7.1");
+            // replace models list 
+            documentation.Commands.Single(x => x.Name == "DIF"
+                && x.Description == "Display Mode Command")
+                .Values2.Single(x => x.Name[0] == "02").SupportedDevices = models.ToArray();
+
             Console.WriteLine("Done!");
             //Console.ReadLine();
             return documentation;
         }
     }
 }
+    
