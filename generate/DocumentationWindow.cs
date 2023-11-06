@@ -23,20 +23,22 @@ namespace generate
         private string selectedZone = "";
         private string selectedCommand = "";
 
+        private ISCPDocumentation documentation;
         private List<ISCPCommandDocumentation> commands;
         public DocumentationWindow(ISCPDocumentation documentation)
         {
             this.commands = documentation.Commands;
+            this.documentation = documentation;
 
             this.Border = new Border() { BorderStyle = BorderStyle.None };
 
             var menu = new MenuBar(new MenuBarItem[] {
                 new MenuBarItem ("_File", new MenuItem [] {
-                    new MenuItem ("_New", "Creates new file", null),
+                    new MenuItem ("_Export as code", "", () => ExportCode()),
                     //new MenuItem ("_Close", "", Terminal.Gui.Application.RequestStop),
-                    new MenuItem ("_Quit", "", null)
+                    new MenuItem ("_Quit", "", () => Application.RequestStop())
                 })
-            });
+            }); ;
             this.Add(menu);
 
             FrameView modelFrameView = new FrameView()
@@ -155,6 +157,38 @@ namespace generate
             modelListView.OnSelectedChanged();
         }
 
+        private void ExportCode()
+        {
+            var d = new SaveDialog("Export documentation as code", "Choose a location to put the new CS file.") { };
+            d.DirectoryPath = "../../../../onkyo-eiscp";
+            d.FilePath = "ISCPDocumentation.generated.cs";
+            // This will filter the dialog on basis of the allowed file types in the array.
+            d.AllowedFileTypes = new string[] { ".cs" };
+            Application.Run(d);
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine($"// Generated on ${DateTime.Now} from version {documentation.Version.ToString()} Onkyo ISCP documentation");
+
+            sb.AppendLine("using System.Collections;");
+            sb.AppendLine("using System.Collections.Specialized;");
+            sb.AppendLine("");
+
+            sb.AppendLine("namespace Eiscp.Core");
+            sb.AppendLine("{");
+            sb.AppendLine("\tpublic static partial class ISCPData");
+            sb.AppendLine("\t{");
+
+            string code = ObjectDumper.Dump(documentation, new DumpOptions() { DumpStyle = DumpStyle.CSharp, IndentChar = '\t', LineBreakChar = Environment.NewLine }) ;
+            code.Split(Environment.NewLine).ToList().ForEach(x =>  sb.AppendLine("\t\t" + x) );
+
+            sb.AppendLine("\t}");
+            sb.AppendLine("}");
+
+            File.WriteAllText(Path.Combine(d.DirectoryPath.ToString(), d.FilePath.ToString()), sb.ToString());
+
+        }
+
         private void ModelListView_SelectedItemChanged(ListViewItemEventArgs obj)
         {
             selectedModel = obj.Value.ToString();
@@ -187,30 +221,29 @@ namespace generate
             bool first = true;
             foreach (ISCPCommandValueDocumentation value in command.Values2.Where(y => y.SupportedDevices.Contains(selectedModel)))
             {
-                Label descriptionLabel = new Label()
+                Label descriptionLabel = new Label(value.Description)
                 {
-                    Text = value.Description,
                     Width = Dim.Fill(1),
                     AutoSize = true
                 };
-                FrameView valueFrame = new FrameView()
+                FrameView valueFrame = new FrameView(value.Name[0], new Border() { Padding = new Thickness(0), BorderThickness = new Thickness(0), BorderStyle = BorderStyle.Single })
                 {
-                    Title = value.Name[0],
                     Y = first ? 0 : Pos.Bottom(valuesScrollView.Subviews[0].Subviews.Last()),
-                    Width = Dim.Fill(1) ,
+                    Width = Dim.Fill(1),
                     Height = descriptionLabel.Bounds.Height + 2,
                     AutoSize = true
                 };
                 valueFrame.Add(descriptionLabel);
+
                 valuesScrollView.Add(valueFrame);
-              
+
                 first = false;
             }
 
 
 
             valuesScrollView.ContentSize = new Size(
-                valuesFrameView.Bounds.Width == 0 ? 200 : valuesFrameView.Bounds.Width,
+                valuesFrameView.Bounds.Width == 0 ? 200 : valuesFrameView.Bounds.Width - 1,
                 valuesScrollView.Subviews[0].Subviews.Sum(x => x.Bounds.Height)
             );
 
