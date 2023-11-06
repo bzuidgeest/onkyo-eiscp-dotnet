@@ -1,4 +1,5 @@
 using Eiscp.Core;
+using Eiscp.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -161,7 +162,7 @@ namespace generate
         {
             var d = new SaveDialog("Export documentation as code", "Choose a location to put the new CS file.") { };
             d.DirectoryPath = "../../../../onkyo-eiscp";
-            d.FilePath = "ISCPDocumentation.generated.cs";
+            d.FilePath = "ISCPClient.generated.cs";
             // This will filter the dialog on basis of the allowed file types in the array.
             d.AllowedFileTypes = new string[] { ".cs" };
             Application.Run(d);
@@ -172,16 +173,30 @@ namespace generate
 
             sb.AppendLine("using System.Collections;");
             sb.AppendLine("using System.Collections.Specialized;");
+            sb.AppendLine("using Eiscp.Core.Models;");
             sb.AppendLine("");
 
             sb.AppendLine("namespace Eiscp.Core");
             sb.AppendLine("{");
-            sb.AppendLine("\tpublic static partial class ISCPData");
+            sb.AppendLine("\tpublic static partial class ISCPClient");
             sb.AppendLine("\t{");
 
-            string code = ObjectDumper.Dump(documentation, new DumpOptions() { DumpStyle = DumpStyle.CSharp, IndentChar = '\t', LineBreakChar = Environment.NewLine }) ;
+            string code = ObjectDumper.Dump(documentation, new DumpOptions()
+            {
+                DumpStyle = DumpStyle.CSharp,
+                IndentChar = '\t',
+                IndentSize = 1,
+                LineBreakChar = Environment.NewLine,
+                ExcludeProperties = { "Version" }
+            }) ;
+
+            code = code.Insert(code.IndexOf("Commands ="), $"Version = new Version({documentation.Version.Major}, {documentation.Version.Minor}),\r\n\t");
             code.Split(Environment.NewLine).ToList().ForEach(x =>  sb.AppendLine("\t\t" + x) );
 
+            // Objectdumper generated a variable declaration. Change to a static property.
+            sb.Replace("var iSCPDocumentation = new ISCPDocumentation", "public static ISCPDocumentation Documentation { get; set; } = new ISCPDocumentation");
+
+            // re-add Version
             sb.AppendLine("\t}");
             sb.AppendLine("}");
 
@@ -192,62 +207,80 @@ namespace generate
         private void ModelListView_SelectedItemChanged(ListViewItemEventArgs obj)
         {
             selectedModel = obj.Value.ToString();
-            zoneListView.SetSource(commands.Where(x => x.Values2.Any(y => y.SupportedDevices.Contains(selectedModel)))
+            zoneListView.SetSource(commands.Where(x => x.Values.Any(y => y.SupportedDevices.Contains(selectedModel)))
                 .Select(x => x.Zone).Distinct<string>().ToList());
             zoneListView.OnSelectedChanged();
         }
         private void ZoneListView_SelectedItemChanged(ListViewItemEventArgs obj)
         {
-            selectedZone = obj.Value.ToString();
+            if (obj.Value != null)
+            {
+                selectedZone = obj.Value.ToString();
 
-            commandListView.SetSource(commands.Where(x => x.Values2.Any(y => y.SupportedDevices.Contains(selectedModel))
-                && x.Zone == selectedZone
-                ).Select(x => x.Name).Distinct<string>().ToList());
-            commandListView.OnSelectedChanged();
+                commandListView.SetSource(commands.Where(x => x.Values.Any(y => y.SupportedDevices.Contains(selectedModel))
+                    && x.Zone == selectedZone
+                    ).Select(x => x.Name).Distinct<string>().ToList());
+                commandListView.OnSelectedChanged();
+            }
+            else
+            {
+                selectedZone = "";
+                commandListView.SetSource(new string[] { });
+                commandListView.OnSelectedChanged();
+            }
         }
 
         private void CommandListView_SelectedItemChanged(ListViewItemEventArgs obj)
         {
-            selectedCommand = obj.Value.ToString();
-            ISCPCommandDocumentation command = commands.Single(x => x.Values2.Any(y => y.SupportedDevices.Contains(selectedModel))
-                && x.Zone == selectedZone
-                && x.Name == selectedCommand);
-
-            commandDescriptionLabel.Text = command.Description;
-
-            valuesScrollView.RemoveAll();
-
-            //int i = 0;
-            bool first = true;
-            foreach (ISCPCommandValueDocumentation value in command.Values2.Where(y => y.SupportedDevices.Contains(selectedModel)))
+            if (obj.Value != null)
             {
-                Label descriptionLabel = new Label(value.Description)
-                {
-                    Width = Dim.Fill(1),
-                    AutoSize = true
-                };
-                FrameView valueFrame = new FrameView(value.Name[0], new Border() { Padding = new Thickness(0), BorderThickness = new Thickness(0), BorderStyle = BorderStyle.Single })
-                {
-                    Y = first ? 0 : Pos.Bottom(valuesScrollView.Subviews[0].Subviews.Last()),
-                    Width = Dim.Fill(1),
-                    Height = descriptionLabel.Bounds.Height + 2,
-                    AutoSize = true
-                };
-                valueFrame.Add(descriptionLabel);
+                selectedCommand = obj.Value.ToString();
+                ISCPCommandDocumentation command = commands.Single(x => x.Values.Any(y => y.SupportedDevices.Contains(selectedModel))
+                    && x.Zone == selectedZone
+                    && x.Name == selectedCommand);
 
-                valuesScrollView.Add(valueFrame);
+                commandDescriptionLabel.Text = command.Description;
 
-                first = false;
+                valuesScrollView.RemoveAll();
+
+                //int i = 0;
+                bool first = true;
+                foreach (ISCPCommandValueDocumentation value in command.Values.Where(y => y.SupportedDevices.Contains(selectedModel)))
+                {
+                    Label descriptionLabel = new Label(value.Description)
+                    {
+                        Width = Dim.Fill(1),
+                        AutoSize = true
+                    };
+                    FrameView valueFrame = new FrameView(value.Name, new Border() { Padding = new Thickness(0), BorderThickness = new Thickness(0), BorderStyle = BorderStyle.Single })
+                    {
+                        Y = first ? 0 : Pos.Bottom(valuesScrollView.Subviews[0].Subviews.Last()),
+                        Width = Dim.Fill(1),
+                        Height = descriptionLabel.Bounds.Height + 2,
+                        AutoSize = true
+                    };
+                    valueFrame.Add(descriptionLabel);
+
+                    valuesScrollView.Add(valueFrame);
+
+                    first = false;
+                }
+
+
+
+                valuesScrollView.ContentSize = new Size(
+                    valuesFrameView.Bounds.Width == 0 ? 200 : valuesFrameView.Bounds.Width - 1,
+                    valuesScrollView.Subviews[0].Subviews.Sum(x => x.Bounds.Height)
+                );
+
+                //valuesFrameView.Height = Dim.Fill(1);
             }
-
-
-
-            valuesScrollView.ContentSize = new Size(
-                valuesFrameView.Bounds.Width == 0 ? 200 : valuesFrameView.Bounds.Width - 1,
-                valuesScrollView.Subviews[0].Subviews.Sum(x => x.Bounds.Height)
-            );
-
-            //valuesFrameView.Height = Dim.Fill(1);
+            else
+            {
+                selectedCommand = "";
+                commandDescriptionLabel.Text = "";
+                //valuesScrollView.Subviews.Clear();
+            }
         }
 
     }

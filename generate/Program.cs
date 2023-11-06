@@ -16,6 +16,7 @@ using onkyo;
 using Terminal.Gui;
 using Eiscp.Core;
 using generate;
+using Eiscp.Core.Models;
 
 class Program
 {
@@ -738,7 +739,7 @@ class Program
             Console.WriteLine($"Input file not found: {inputFile}");
         }
 
-        ISCPDocumentation iSCPDocumentation = OnkyoDocumentation.Parse("../../../ISCP_AVR_146.xlsx");
+        ISCPDocumentation iSCPDocumentation = ISCPDocumentationGenerator.Parse("../../../ISCP_AVR_146.xlsx");
 
 
         Application.Init();

@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace generate
+namespace Eiscp.Core.Models
 {
     public class ISCPDocumentation
     {
-        public List<ISCPCommandDocumentation> Commands { get; private set; } = new List<ISCPCommandDocumentation>();
+        public List<ISCPCommandDocumentation> Commands { get; set; } = new List<ISCPCommandDocumentation>();
 
-        public Version Version { get; private set; } = new Version();
+        public Version Version { get; set; } = new Version();
 
-        public string[] Models { get; private set; } = { };
+        public string[] Models { get; set; } = { };
 
 
         public ISCPDocumentation(List<ISCPCommandDocumentation> commands, Version version)  

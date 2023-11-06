@@ -17,6 +17,10 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <ProjectReference Include="..\onkyo-eiscp\Eiscp.Core.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <None Update="eiscp-commands.yaml">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
