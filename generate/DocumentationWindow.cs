@@ -178,7 +178,7 @@ namespace generate
 
             sb.AppendLine("namespace Eiscp.Core");
             sb.AppendLine("{");
-            sb.AppendLine("\tpublic static partial class ISCPClient");
+            sb.AppendLine("\tpublic partial class ISCPClient");
             sb.AppendLine("\t{");
 
             string code = ObjectDumper.Dump(documentation, new DumpOptions()

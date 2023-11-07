@@ -5,7 +5,7 @@ using Eiscp.Core.Models;
 
 namespace Eiscp.Core
 {
-	public static partial class ISCPClient
+	public abstract partial class ISCPClient
 	{
 		public static ISCPDocumentation Documentation { get; set; } = new ISCPDocumentation
 		{
