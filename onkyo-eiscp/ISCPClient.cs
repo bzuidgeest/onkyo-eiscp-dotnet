@@ -80,11 +80,11 @@ namespace Eiscp.Core
 
         public void SendCommand(string command)
         {
-            IscpMessage message = new IscpMessage(command);
+            ISCPClientMessage message = new ISCPClientMessage(command);
 
             
             
-            sendMessageQueue.Add(message.Bytes);
+            sendMessageQueue.Add(message.MessageBytes);
         }
 
         public virtual void Disconnect()

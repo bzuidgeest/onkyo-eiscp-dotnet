@@ -50,7 +50,7 @@ namespace Eiscp.Core
         public static List<ReceiverInfo> Discover(double timeout)
         {
             int onkyoPort = 60128;
-            byte[] onkyoMagic = (new EiscpPacket("!xECNQSTN")).Bytes;
+            byte[] onkyoMagic = (new EISCPPacket("!xECNQSTN")).Bytes;
 
             var receivers = new List<ReceiverInfo>();
 
@@ -79,7 +79,7 @@ namespace Eiscp.Core
                         read = socket.ReceiveFrom(data, ref addr);
 
                         
-                        string response = Encoding.ASCII.GetString(EiscpPacket.Parse(data));
+                        string response = Encoding.ASCII.GetString(EISCPPacket.Parse(data));
 
                         receivers.Add(ReceiverInfo.ParseDiscoveryResponse((addr as IPEndPoint), response));
                         

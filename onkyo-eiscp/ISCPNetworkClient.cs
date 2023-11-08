@@ -12,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace Eiscp.Core
 {
-    public class NetworkISCPClient : ISCPClient
+    public class ISCPNetworkClient : ISCPClient
     {
         
         private Socket socket;
 
-        public NetworkISCPClient(ReceiverInfo receiverInfo) 
+        public ISCPNetworkClient(ReceiverInfo receiverInfo) 
             : base(receiverInfo)
         { 
             socket = new Socket(ReceiverInfo.IPEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -52,7 +52,7 @@ namespace Eiscp.Core
                 {
                     iSCPMessage = sendMessageQueue.Take(sendCancelationTokenSource.Token);
 
-                    EiscpPacket message = new EiscpPacket(iSCPMessage);
+                    EISCPPacket message = new EISCPPacket(iSCPMessage);
 
                     ArraySegment<byte> data = new ArraySegment<byte>(message.Bytes);
 

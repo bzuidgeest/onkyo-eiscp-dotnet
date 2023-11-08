@@ -11,22 +11,31 @@ namespace Eiscp.Core.Models
 {
     public class ReceiverInfo
     {
-        public string Category { get; private set; } = "";
-        public string ModelName { get; private set; } = "";
+        public string Category { get; private set; } = string.Empty;
+        public string ModelName { get; private set; } = string.Empty;
         public int Port { get; private set; } = 0;
 
         public IPEndPoint IPEndPoint { get; private set; }
 
+        public string SerialPortName { get; private set; } = string.Empty;
+
+
         public string Hostname { get; private set; }
 
-        public string AreaCode { get; private set; } = "";
+        public string AreaCode { get; private set; } = string.Empty;
 
-        public string Identifier { get; private set; } = "";
-        private ReceiverInfo(IPEndPoint iPEndPoint, string modelName, string category, int port, string areaCode, string identifier) 
+        public string Identifier { get; private set; } = string.Empty;
+        public ReceiverInfo(IPEndPoint iPEndPoint, string modelName, string category, int port, string areaCode, string identifier) 
         {
             (IPEndPoint, ModelName, Category, Port, AreaCode, Identifier) = (iPEndPoint, modelName, category, port, areaCode, identifier);
 
-        }  
+        }
+
+        public ReceiverInfo(string serialPortName, string modelName, string category, int port, string areaCode, string identifier)
+        {
+            (SerialPortName, ModelName, Category, Port, AreaCode, Identifier) = (serialPortName, modelName, category, port, areaCode, identifier);
+
+        }
 
         public static ReceiverInfo ParseDiscoveryResponse(IPEndPoint iPEndPoint, string response)
         {
@@ -62,11 +71,11 @@ namespace Eiscp.Core.Models
 
             return new ReceiverInfo(
                 iPEndPoint,
-                info["model_name"].Value ?? "",
-                info["device_category"].Value ?? "",
+                info["model_name"].Value ?? string.Empty,
+                info["device_category"].Value ?? string.Empty,
                 Int32.Parse(info["iscp_port"].Value),
-                info["area_code"].Value ?? "",
-                info["identifier"].Value ?? ""
+                info["area_code"].Value ?? string.Empty,
+                info["identifier"].Value ?? string.Empty
             );
         }
     }

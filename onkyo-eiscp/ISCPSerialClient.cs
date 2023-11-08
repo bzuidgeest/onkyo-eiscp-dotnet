@@ -14,16 +14,16 @@ using System.IO.Ports;
 
 namespace Eiscp.Core
 {
-    public class SerialISCPClient : ISCPClient
+    public class ISCPSerialClient : ISCPClient
     {
 
         private SerialPort port;
         private List<byte> serialReceiveBuffer = new List<byte>();
 
-        public SerialISCPClient(ReceiverInfo receiverInfo, string serialPortName)
+        public ISCPSerialClient(ReceiverInfo receiverInfo)
             : base(receiverInfo)
         {
-            port = new SerialPort(serialPortName, 9600, Parity.None, 8, StopBits.One);
+            port = new SerialPort(receiverInfo.SerialPortName, 9600, Parity.None, 8, StopBits.One);
         }
 
         private protected override async void ReceiveMessage()
@@ -33,6 +33,7 @@ namespace Eiscp.Core
             {
                 try
                 {
+                    // maybe switch to Port.BaseStream
                     if (serialReceiveBuffer.Contains(0x1A)) //EOF
                     {
                         try

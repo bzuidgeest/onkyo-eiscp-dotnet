@@ -116,9 +116,9 @@ namespace Eiscp.Core
         }
         public void SendCommand(string command)
         {
-            IscpMessage message = new IscpMessage(command);
+            ISCPClientMessage message = new ISCPClientMessage(command);
 
-            EiscpPacket packet = new EiscpPacket(message);
+            EISCPPacket packet = new EISCPPacket(message);
 
             sendMessageQueue.Add(packet.Bytes);
         }

@@ -2,15 +2,16 @@
 using System.Net;
 using System.Diagnostics;
 using System.Text;
-namespace Eiscp.Core
+
+namespace Eiscp.Core.Models
 {
     /// <summary>
     /// For communicating over Ethernet, traditional ISCP messages are
-    /// wrapped inside an eISCP package.
+    /// wrapped inside an EISCP package.
     /// </summary>
-    public class EiscpPacket
+    public class EISCPPacket
     {
-        public EiscpPacket(byte[] iscpMessage)
+        public EISCPPacket(byte[] iscpMessage)
         {
             // Header format is:
             // - magic: 4 bytes of ASCII characters 'ISCP';
@@ -34,13 +35,13 @@ namespace Eiscp.Core
             iscpMessage.CopyTo(Bytes, 16);
         }
 
-        public EiscpPacket(string message):
+        public EISCPPacket(string message) :
             this(Encoding.ASCII.GetBytes(message))
         {
         }
 
-        public EiscpPacket(IscpMessage iscpMessage) :
-            this(iscpMessage.Bytes)
+        public EISCPPacket(ISCPClientMessage iscpMessage) :
+            this(iscpMessage.MessageBytes)
         {
         }
 
@@ -51,14 +52,14 @@ namespace Eiscp.Core
         }
 
         /// <summary>
-        /// Parse the eISCP package given by <paramref name="bytes"/>
+        /// Parse the EISCP package given by <paramref name="bytes"/>
         /// </summary>       
         public static byte[] Parse(byte[] bytes)
         {
             byte[] headerBytes = new byte[16];
             Array.Copy(bytes, headerBytes, 16);
 
-            Header h = ParseHeader(headerBytes);
+            EISCPHeader h = ParseHeader(headerBytes);
 
             byte[] data = new byte[h.messageSize];
             Array.Copy(bytes, h.headerSize, data, 0, h.messageSize);
@@ -69,18 +70,18 @@ namespace Eiscp.Core
         }
 
         /// <summary>
-        /// Parse the header of an eISCP package.
+        /// Parse the header of an EISCP package.
         /// </summary>
         /// This is useful when reading data in a streaming fashion,
         /// because you can subsequently know the number of bytes to
         /// expect in the packet.        
-        public static Header ParseHeader(byte[] bytes)
+        public static EISCPHeader ParseHeader(byte[] bytes)
         {
             // A header is always 16 bytes in length
             Debug.Assert(bytes.Length == 16);
 
             // Parse the header. Its format is described in the constructor's body.
-            var header = new Header()
+            var header = new EISCPHeader()
             {
                 magic = new byte[4],
                 headerSize = IPAddress.NetworkToHostOrder(BitConverter.ToInt32(bytes, 4)),
